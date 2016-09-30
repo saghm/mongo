@@ -30,8 +30,10 @@
 
 #define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kStorage
 
+
 #include "mongo/db/storage/mmap_v1/record_store_v1_base.h"
 
+#include <iostream>
 
 #include "mongo/db/catalog/collection.h"
 #include "mongo/db/client.h"
@@ -273,12 +275,19 @@ DiskLoc RecordStoreV1Base::_findFirstSpot(OperationContext* txn,
 }
 
 DiskLoc RecordStoreV1Base::getNextRecordInExtent(OperationContext* txn, const DiskLoc& loc) const {
+    log() << "getNextRecordInExtent - loc: " << loc << "\n";
+
     int nextOffset = recordFor(loc)->nextOfs();
 
     if (nextOffset == DiskLoc::NullOfs)
         return DiskLoc();
 
+    if (abs(nextOffset) < 8) {
+        log() << "FASSERT - NEXT OFFSET: " << nextOffset << "\n";
+        fassert(999999, abs(nextOffset) >= 8);  // defensive
+    }
     fassert(17441, abs(nextOffset) >= 8);  // defensive
+
     DiskLoc result(loc.a(), nextOffset);
     return result;
 }
@@ -429,6 +438,8 @@ StatusWith<RecordData> RecordStoreV1Base::updateWithDamages(
 void RecordStoreV1Base::deleteRecord(OperationContext* txn, const RecordId& rid) {
     const DiskLoc dl = DiskLoc::fromRecordId(rid);
 
+    log() << "deleteRecord: " << dl << "\n";
+
     MmapV1RecordHeader* todelete = recordFor(dl);
     invariant(todelete->netLength() >= 4);  // this is required for defensive code
 
@@ -441,6 +452,7 @@ void RecordStoreV1Base::deleteRecord(OperationContext* txn, const RecordId& rid)
         }
 
         if (todelete->nextOfs() != DiskLoc::NullOfs) {
+            log() << "deleting extent at " << dl;
             DiskLoc next = getNextRecord(txn, dl);
             MmapV1RecordHeader* nextRecord = recordFor(next);
             txn->recoveryUnit()->writingInt(nextRecord->prevOfs()) = todelete->prevOfs();

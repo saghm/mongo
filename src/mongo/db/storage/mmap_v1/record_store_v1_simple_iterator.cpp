@@ -26,12 +26,15 @@
  *    it in the license file.
  */
 
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kStorage
+
 #include "mongo/db/storage/mmap_v1/record_store_v1_simple_iterator.h"
 
 #include "mongo/db/catalog/collection.h"
 #include "mongo/db/storage/mmap_v1/extent.h"
 #include "mongo/db/storage/mmap_v1/extent_manager.h"
 #include "mongo/db/storage/mmap_v1/record_store_v1_simple.h"
+#include "mongo/util/log.h"
 
 namespace mongo {
 
@@ -94,6 +97,7 @@ void SimpleRecordStoreV1Iterator::advance() {
     // Move to the next thing.
     if (!isEOF()) {
         if (_forward) {
+            log() << "advancing from " << _curr;
             _curr = _recordStore->getNextRecord(_txn, _curr);
         } else {
             _curr = _recordStore->getPrevRecord(_txn, _curr);

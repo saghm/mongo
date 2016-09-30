@@ -516,6 +516,11 @@ DiskLoc MmapV1ExtentManager::allocateExtent(OperationContext* txn,
 void MmapV1ExtentManager::freeExtent(OperationContext* txn, DiskLoc firstExt) {
     Lock::ResourceLock rlk(txn->lockState(), _rid, MODE_X);
     Extent* e = getExtent(firstExt);
+
+    LOG(1) << "MmapV1ExtentManager::freeExtent"
+           << " length: " << e->length << " loc: " << e->myLoc;
+
+
     txn->recoveryUnit()->writing(&e->xnext)->Null();
     txn->recoveryUnit()->writing(&e->xprev)->Null();
     txn->recoveryUnit()->writing(&e->firstRecord)->Null();
@@ -539,6 +544,10 @@ void MmapV1ExtentManager::freeExtents(OperationContext* txn, DiskLoc firstExt, D
 
     if (firstExt.isNull() && lastExt.isNull())
         return;
+
+    LOG(1) << "MmapV1ExtentManager::freeExtents"
+           << " first loc: " << firstExt << " last loc: " << lastExt;
+
 
     {
         verify(!firstExt.isNull() && !lastExt.isNull());

@@ -219,6 +219,8 @@ StatusWith<DiskLoc> CappedRecordStoreV1::allocRecord(OperationContext* txn,
 
     addDeletedRec(txn, newDelLoc);
 
+    log() << "allocRecord: " << loc << "\n";
+
     return StatusWith<DiskLoc>(loc);
 }
 
